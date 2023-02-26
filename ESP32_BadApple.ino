@@ -4,6 +4,71 @@
 #include "SSD1306.h"
 #include "heatshrink_decoder.h"
 
+// MP3 Audio function
+#define ENABLE_MP3
+
+#ifdef ENABLE_MP3
+// Bad Apple for ESP32 with MP3 Audio and Optimize Draw OLED | 2023 by FREE WING | MIT-License.
+// http://www.neko.ne.jp/~freewing/
+// Movie 6573 frame, 6573 / 30fps = 219.1 sec
+// Original Wave Audio duration 3:39.127, MP3 duration 3:39.220, Delayed 93ms
+// ba.mp3 (Layer-3 Lame 22050HZ 40kbps Mono, duration 3:39.220, 1096379 bytes)
+// Flash Size = 4MB, Partition Scheme = No OTA(1MB APP/ 3MB SPIFFS)
+// mkspiffs.exe -c .\data -s 0x2E0000 SPIFFS.bin
+// esptool.exe write_flash 0x110000 SPIFFS.bin
+
+#include "AudioFileSourceSPIFFS.h"
+#include "AudioGeneratorMP3.h"
+
+// #define ENABLE_I2S_DAC
+#define I2S_BCLK  26
+#define I2S_LRC   25
+
+#ifdef ENABLE_I2S_DAC
+  #include "AudioOutputI2S.h"
+  AudioOutputI2S* pOutput;
+  #define I2S_DOUT  16
+
+  // Normary Use Maxim MAX98357 I2S DAC it no need MCLK
+  // #define USE_CS4344_DAC
+  #ifdef USE_CS4344_DAC
+    // Cirrus Logic CS4344 I2S DAC need MCLK
+    #define I2S_MCLK 14
+  #endif
+
+  // ! Caution Loud Sound !
+  #define AUDIO_OUTPUT_GAIN 0.3
+
+  // Adjust this Loop value Yourself !!
+  // Syncronize Audio and Video, Pre loop 1.000sec
+  #define ADJUST_MP3_PRE_LOOP 1000/1000
+
+#else
+  #include "AudioOutputI2SNoDAC.h"
+  AudioOutputI2SNoDAC* pOutput;
+  // GPIO 15 Connect Speaker
+  #define I2S_DOUT  15
+
+  // Max 4.0 but Become Silent So It would be Maximum 3.999
+  #define AUDIO_OUTPUT_GAIN 1.999
+
+  // Adjust this Loop value Yourself !!
+  // Syncronize Audio and Video, Pre loop 0.700sec
+  // Tested ESP32-D0WDQ6 (revision 1) WeMos clone
+  #define ADJUST_MP3_PRE_LOOP 700/1000
+
+#endif
+
+AudioGeneratorMP3* pMp3;
+AudioFileSourceSPIFFS* pFile;
+
+#define MP3_LOOP pMp3->loop(); // Play MP3 Audio
+
+#else
+#define MP3_LOOP ; // NOP
+
+#endif
+
 // Board Boot SW GPIO 0
 #define BOOT_SW 0
 
@@ -95,18 +160,26 @@ int32_t frame = 0;
 uint32_t* pImage;
 uint32_t b = 0x01;
 
+#ifdef ENABLE_MP3
+uint32_t black_skip_count = 0;
+const bool isButtonPressing = false;
+
+#else
 volatile bool isButtonPressing = false;
 
 void ARDUINO_ISR_ATTR isr() {
     lastRefresh = micros();
     isButtonPressing = (digitalRead(BOOT_SW) == LOW);
 }
+#endif
 
 void putPixels(uint32_t c, int32_t len) {
   uint32_t d1;
   uint32_t d2;
 
   while(len--) {
+    MP3_LOOP; // Play MP3 Audio
+
     // Direct Draw OLED buffer
     // OLED Buffer Image Rotate 90 Convert X-Y and Byte structure
     {
@@ -144,6 +217,13 @@ void putPixels(uint32_t c, int32_t len) {
         *pImage   |= d2;
       } else {
         pImage++;
+#ifdef ENABLE_MP3
+        // Adjust Audio Timing for Skip Black every 4
+        black_skip_count++;
+        if ((black_skip_count << 30) == 0) {
+          MP3_LOOP; // Play MP3 Audio
+        }
+#endif
       }
       pImage++;
     }
@@ -152,6 +232,8 @@ void putPixels(uint32_t c, int32_t len) {
     curr_xy++;
     if((curr_xy & 0x0f) == 0) {
       pImage -= 128/4;
+
+      MP3_LOOP; // Play MP3 Audio
 
       b <<= 1;
       if(b == 0x100) {
@@ -164,9 +246,13 @@ void putPixels(uint32_t c, int32_t len) {
         if((curr_xy & 0x3ff) == 0) {
           pImage = (uint32_t*)display.buffer;
 
+          MP3_LOOP; // Play MP3 Audio
+
           // Update Display frame
           display.display();
           //display.clear();
+
+          MP3_LOOP; // Play MP3 Audio
 
           if(!isButtonPressing) {
             // 30 fps target rate = 33.333us
@@ -176,6 +262,8 @@ void putPixels(uint32_t c, int32_t len) {
             if ((++frame % 3) == 0) lastRefresh++;
 #endif
             while(micros() < lastRefresh) ;
+
+            MP3_LOOP; // Play MP3 Audio
           }
         }
       }
@@ -184,6 +272,8 @@ void putPixels(uint32_t c, int32_t len) {
 }
 
 void decodeRLE(uint32_t c) {
+    MP3_LOOP; // Play MP3 Audio
+
     if(c_to_dup == -1) {
       if((c == 0x55) || (c == 0xaa)) {
         c_to_dup = c;
@@ -254,6 +344,15 @@ void readFile(fs::FS &fs, const char * path){
     size_t toSink = 0;
     uint32_t sinkHead = 0;
 
+    Serial.println("Start.");
+
+#ifdef ENABLE_MP3
+    // Syncronize Audio and Video, Pre loop
+    for(uint32_t i=0; i<44100UL * ADJUST_MP3_PRE_LOOP; ++i) {
+      pMp3->loop();
+    }
+#endif
+
     lastRefresh = micros();
 
     // Go through file...
@@ -309,11 +408,20 @@ void readFile(fs::FS &fs, const char * path){
 #else
     Serial.println("Done.");
 #endif
+#ifdef ENABLE_MP3
+    while (pMp3->loop()) ;
+    pMp3->stop();
+    Serial.println("MP3 end");
+#endif
 
     // 10 sec
     delay(10000);
     display.resetDisplay();
+#ifdef ENABLE_MP3
+    display.drawStringMaxWidth(0, 0, 128, "Add MP3 Audio version. modded By FREE WING 2023/02/18");
+#else
     display.drawStringMaxWidth(0, 0, 128, "Optimize OLED Draw Performance version. modded By FREE WING");
+#endif
     display.drawStringMaxWidth(0, 40, 128, "http://www.neko.ne.jp/~freewing/"); display.display();
     delay(10000);
     // Reset to Infinite Loop Demo !
@@ -345,13 +453,47 @@ void setup(){
         return;
     }
 
+#ifndef ENABLE_MP3
     pinMode(BOOT_SW, INPUT_PULLUP);
     attachInterrupt(BOOT_SW, isr, CHANGE);
+#endif
     Serial.print("totalBytes(): ");
     Serial.println(SPIFFS.totalBytes());
     Serial.print("usedBytes(): ");
     Serial.println(SPIFFS.usedBytes());
     listDir(SPIFFS, "/", 0);
+
+#ifdef ENABLE_MP3
+    pFile = new AudioFileSourceSPIFFS("/ba.mp3" );
+    if (pFile->getSize() == 0) {
+        Serial.println("Failed to open file for MP3");
+        display.drawStringMaxWidth(0, 10, 128, "MP3 File open error. Upload ba.mp3 using ESP32 Sketch Upload."); display.display();
+        while(true) ;
+    }
+#ifdef ENABLE_I2S_DAC
+    pOutput = new AudioOutputI2S();
+    pOutput->SetGain(AUDIO_OUTPUT_GAIN);
+#else
+    pOutput = new AudioOutputI2SNoDAC();
+    pOutput->SetGain(AUDIO_OUTPUT_GAIN);
+    // pOutput->SetRate(44100 / 2); // 22050Hz enough
+    // pOutput->SetBitsPerSample(8); // 8 bit enough
+    // pOutput->SetChannels(1); // Mono
+#endif
+
+#ifdef USE_CS4344_DAC
+    // Add support for I2S MCLK. #594 on Jan 5, 2023
+    // https://github.com/earlephilhower/ESP8266Audio/pull/594
+    // Release 1.9.7 Jun 10, 2022 not yet Merged
+    pOutput->SetPinout(I2S_BCLK, I2S_LRC, I2S_DOUT, I2S_MCLK);
+#else
+    pOutput->SetPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
+    pOutput->SetOutputModeMono(true); // MAX98357 module is Mono
+#endif
+
+    pMp3 = new AudioGeneratorMP3();
+    pMp3->begin(pFile, pOutput);
+#endif
 
 #ifdef ENABLE_EXTRA_I2C_CLOCK_UP
     // Direct Access I2C SCL frequency setting value
