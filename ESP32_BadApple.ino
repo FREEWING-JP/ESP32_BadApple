@@ -78,6 +78,9 @@ AudioFileSourceSPIFFS* pFile;
 // Disable heatshrink error checking
 #define DISABLE_HS_ERROR
 
+// Enable Dump Bitmap log for Retrieve Original Bitmap data
+// #define ENABLE_LOG
+
 // Hints:
 // * Adjust the display pins below
 // * After uploading to ESP32, also do "ESP32 Sketch Data Upload" from Arduino
@@ -228,10 +231,20 @@ void putPixels(uint32_t c, int32_t len) {
       pImage++;
     }
 
+#ifdef ENABLE_LOG
+    Serial.print(" 0x");
+    Serial.print(c, HEX);
+    Serial.print(",");
+#endif
+
     // oyy_ybbb_xxxx X=0-15(4 bit), Bit=0-7(3 bit),Y=0-7(3 bit)
     curr_xy++;
     if((curr_xy & 0x0f) == 0) {
       pImage -= 128/4;
+
+#ifdef ENABLE_LOG
+      Serial.println("");
+#endif
 
       MP3_LOOP; // Play MP3 Audio
 
@@ -245,6 +258,17 @@ void putPixels(uint32_t c, int32_t len) {
         // Check Overflow bit, It equivalent if((curr_xy & 0x400) != 0)
         if((curr_xy & 0x3ff) == 0) {
           pImage = (uint32_t*)display.buffer;
+
+#ifdef ENABLE_LOG_OLED_BUFF
+          uint8_t* ppImage = display.buffer;
+          for (uint32_t ii = 0; ii < 128*64/8; ++ii) {
+            if ((ii % 16) == 0) Serial.println("");
+
+            Serial.print(" 0x");
+            Serial.print(*ppImage++, HEX);
+            Serial.print(",");
+          }
+#endif
 
           MP3_LOOP; // Play MP3 Audio
 
@@ -262,6 +286,12 @@ void putPixels(uint32_t c, int32_t len) {
             if ((++frame % 3) == 0) lastRefresh++;
 #endif
             while(micros() < lastRefresh) ;
+
+#ifdef ENABLE_LOG
+            Serial.print("  // ");
+            Serial.println(frame);
+            Serial.println("");
+#endif
 
             MP3_LOOP; // Play MP3 Audio
           }
@@ -346,6 +376,11 @@ void readFile(fs::FS &fs, const char * path){
 
     Serial.println("Start.");
 
+#ifdef ENABLE_LOG
+    uint32_t unhs = 0;
+    Serial.println("====");
+#endif
+
 #ifdef ENABLE_MP3
     // Syncronize Audio and Video, Pre loop
     for(uint32_t i=0; i<44100UL * ADJUST_MP3_PRE_LOOP; ++i) {
@@ -378,6 +413,9 @@ void readFile(fs::FS &fs, const char * path){
       do {
           // rle_size = 0;
           pres = heatshrink_decoder_poll(&hsd, rle_buf, RLEBUFSIZE, &rle_size);
+#ifdef ENABLE_LOG
+          unhs += rle_size;
+#endif
           //Serial.print("^^ polled ");
           //Serial.println(rle_size);
 #ifndef DISABLE_HS_ERROR
@@ -402,6 +440,13 @@ void readFile(fs::FS &fs, const char * path){
       } while (pres == HSDR_POLL_MORE);
     }
     file.close();
+
+#ifdef ENABLE_LOG
+    Serial.println("====");
+    Serial.print("heatshrink decode size: ");
+    Serial.println(unhs);
+#endif
+
 #ifdef ENABLE_FRAME_COUNTER
     Serial.print("Done. ");
     Serial.println(frame);
@@ -431,7 +476,11 @@ void readFile(fs::FS &fs, const char * path){
 
 
 void setup(){
+#ifdef ENABLE_LOG
+    Serial.begin(921600);
+#else
     Serial.begin(115200);
+#endif
 #ifdef RESET_OLED
     // Reset for some displays
     pinMode(RESET_OLED, OUTPUT); digitalWrite(RESET_OLED, LOW); delay(50); digitalWrite(RESET_OLED, HIGH);
