@@ -10,6 +10,14 @@ Place it in the data directory with the file name of "ba.mp3" by yourself .
 
 [<img src="https://img.youtube.com/vi/B9TrOxXer4E/maxresdefault.jpg" alt="Touhou Bad Apple!! Demo ESP32 with MP3 Audio and SSD1306 OLED (128x64 dot)" title="Touhou Bad Apple!! Demo ESP32 with MP3 Audio and SSD1306 OLED (128x64 dot)" width="320" height="180"> YouTube https://youtu.be/B9TrOxXer4E](https://youtu.be/B9TrOxXer4E)  
 
+# ESP32 I2S Audio Schematics
+No DAC  
+![No DAC](https://raw.githubusercontent.com/FREEWING-JP/ESP32_BadApple_MP3/feature/add_mp3_function/esp32_mp3_audio_no_dac_schematics.png)  
+MAX98357  
+![MAX98357](https://raw.githubusercontent.com/FREEWING-JP/ESP32_BadApple_MP3/feature/add_mp3_function/esp32_mp3_audio_i2s_dac_max98357_schematics.png)  
+CS4344  
+![CS4344](https://raw.githubusercontent.com/FREEWING-JP/ESP32_BadApple_MP3/feature/add_mp3_function/esp32_mp3_audio_i2s_dac_cs4344_schematics.png)  
+
 # Upload SPIFFS via command line
 
 See this commit [ba59205](https://github.com/FREEWING-JP/ESP32_BadApple_MP3/commit/ba5920535c691e5fde63bcc52ccd41607e39a3ea)  
