@@ -7,18 +7,31 @@ def get_compressed(filename):
     imdata = list(im.getdata())
 
     imbit = []
-    b_count = 0
-    c8 = 0
-    for c in imdata[:]:
-        c8 = c8 << 1
-        if c != 0:
-            c8 = c8 | 1
-        b_count += 1
-        if b_count == 8:
-            b_count = 0
-            imbit.append(c8)
-            c8 = 0
+    # b_count = 0
+    # c8 = 0
+    # for c in imdata[:]:
+    #     c8 = c8 << 1
+    #     if c != 0:
+    #         c8 = c8 | 1
+    #     b_count += 1
+    #     if b_count == 8:
+    #         b_count = 0
+    #         imbit.append(c8)
+    #         c8 = 0
 
+    # Rotate 90 for Direct Write OLED Buffer
+    x = 0
+    y = 0
+    for y in range(8):
+      b_count = 0
+      c8 = 0
+      for x in range(128):
+        for b_count in range(8):
+          c = imdata[x + ((y*8)+b_count)*128]
+          c8 = c8 >> 1
+          if c != 0:
+              c8 = c8 | 0x80
+        imbit.append(c8)
 
     # ENCODE
     im_comp = []
@@ -126,11 +139,11 @@ def get_compressed(filename):
 
 sumlen = 0
 movie = []
-output_file = open("E:\\Proggen\\BA\\video.bin","wb")
-output_file_uc = open("E:\\Proggen\\BA\\video.uc","wb")
+output_file = open("./video.bin","wb")
+output_file_uc = open("./video.uc","wb")
 # 6573 5470/2
 for nr in range(1, int(6574)):
-    fn = "E:\Proggen\BA\scene" + "{0:0>5}".format(nr) + ".png"
+    fn = "./scene/" + "{0:0>5}".format(nr) + ".png"
     comp_dat, uncomp = get_compressed(fn)
     output_file.write(bytearray(comp_dat))
     output_file_uc.write(bytearray(uncomp))

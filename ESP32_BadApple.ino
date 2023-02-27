@@ -78,6 +78,9 @@ AudioFileSourceSPIFFS* pFile;
 // Disable heatshrink error checking
 #define DISABLE_HS_ERROR
 
+// Rotate 90 for Direct Write OLED Buffer
+#define ENABLE_ROTATE_90
+
 // Enable Dump Bitmap log for Retrieve Original Bitmap data
 // #define ENABLE_LOG
 
@@ -160,11 +163,19 @@ volatile unsigned long lastRefresh;
 #ifdef ENABLE_FRAME_COUNTER
 int32_t frame = 0;
 #endif
+#ifdef ENABLE_ROTATE_90
+#define CURR_XY_X 0x7f
+uint8_t* pImage;
+#else
+#define CURR_XY_X 0x0f
 uint32_t* pImage;
 uint32_t b = 0x01;
+#endif
 
 #ifdef ENABLE_MP3
+#ifndef ENABLE_ROTATE_90
 uint32_t black_skip_count = 0;
+#endif
 const bool isButtonPressing = false;
 
 #else
@@ -177,13 +188,18 @@ void ARDUINO_ISR_ATTR isr() {
 #endif
 
 void putPixels(uint32_t c, int32_t len) {
+#ifndef ENABLE_ROTATE_90
   uint32_t d1;
   uint32_t d2;
+#endif
 
   while(len--) {
     MP3_LOOP; // Play MP3 Audio
 
     // Direct Draw OLED buffer
+#ifdef ENABLE_ROTATE_90
+    *pImage++ = c;
+#else
     // OLED Buffer Image Rotate 90 Convert X-Y and Byte structure
     {
       // 4 dot(Direct Access 4 byte, 32 bit)
@@ -230,6 +246,7 @@ void putPixels(uint32_t c, int32_t len) {
       }
       pImage++;
     }
+#endif
 
 #ifdef ENABLE_LOG
     Serial.print(" 0x");
@@ -239,8 +256,10 @@ void putPixels(uint32_t c, int32_t len) {
 
     // oyy_ybbb_xxxx X=0-15(4 bit), Bit=0-7(3 bit),Y=0-7(3 bit)
     curr_xy++;
-    if((curr_xy & 0x0f) == 0) {
+    if((curr_xy & CURR_XY_X) == 0) {
+#ifndef ENABLE_ROTATE_90
       pImage -= 128/4;
+#endif
 
 #ifdef ENABLE_LOG
       Serial.println("");
@@ -248,16 +267,22 @@ void putPixels(uint32_t c, int32_t len) {
 
       MP3_LOOP; // Play MP3 Audio
 
+#ifndef ENABLE_ROTATE_90
       b <<= 1;
       if(b == 0x100) {
         // Next Page
         pImage += 128/4;
         b = 0x01;
+#endif
 
         // oyy_ybbb_xxxx X=0-15(4 bit), Bit=0-7(3 bit),Y=0-7(3 bit)
         // Check Overflow bit, It equivalent if((curr_xy & 0x400) != 0)
         if((curr_xy & 0x3ff) == 0) {
+#ifdef ENABLE_ROTATE_90
+          pImage = display.buffer;
+#else
           pImage = (uint32_t*)display.buffer;
+#endif
 
 #ifdef ENABLE_LOG_OLED_BUFF
           uint8_t* ppImage = display.buffer;
@@ -296,7 +321,10 @@ void putPixels(uint32_t c, int32_t len) {
             MP3_LOOP; // Play MP3 Audio
           }
         }
+
+#ifndef ENABLE_ROTATE_90
       }
+#endif
     }
   }
 }
@@ -363,7 +391,11 @@ void readFile(fs::FS &fs, const char * path){
     // init display, putPixels and decodeRLE
     display.resetDisplay();
     // curr_xy = 0;
+#ifdef ENABLE_ROTATE_90
+    pImage = display.buffer;
+#else
     pImage = (uint32_t*)display.buffer;
+#endif
     // runlength = -1;
     // c_to_dup = -1;
 
