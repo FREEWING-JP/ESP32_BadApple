@@ -1,3 +1,21 @@
+# ESP32_BadApple_MP3
+
+* ESP32で東方の Bad Apple!!の動画を 128 x 64 dotの OLED SSD1306で再生する！  
+http://www.neko.ne.jp/~freewing/hardware/espressif_esp32_bad_apple_demo/  
+
+* Caution ! Not committing MP3 files  
+I have not committed the MP3 file due to copyright infringement .  
+Place it in the data directory with the file name of "ba.mp3" by yourself .  
+"ba.mp3" MP3 Encoding Layer-3 Lame 22050HZ 40kbps Mono, duration 3:39.220, 1096379 bytes  
+
+[<img src="https://img.youtube.com/vi/B9TrOxXer4E/maxresdefault.jpg" alt="Touhou Bad Apple!! Demo ESP32 with MP3 Audio and SSD1306 OLED (128x64 dot)" title="Touhou Bad Apple!! Demo ESP32 with MP3 Audio and SSD1306 OLED (128x64 dot)" width="320" height="180"> YouTube https://youtu.be/B9TrOxXer4E](https://youtu.be/B9TrOxXer4E)  
+
+# Upload SPIFFS via command line
+
+See this commit [ba59205](https://github.com/FREEWING-JP/ESP32_BadApple_MP3/commit/ba5920535c691e5fde63bcc52ccd41607e39a3ea)  
+00_Write_SPIFFS.bat  
+
+---
 # ESP32_BadApple
 Bad Apple video by Touhou on ESP32 with SSD1306 OLED, uses the Heatshrink compression library to decompress the RLE encoded video data.
 First version, no sound yet, video only.
