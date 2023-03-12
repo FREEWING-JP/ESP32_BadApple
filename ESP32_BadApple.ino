@@ -21,13 +21,13 @@
 #include "AudioGeneratorMP3.h"
 
 #define ENABLE_I2S_DAC
-#define I2S_BCLK  12 /* Bit Clock */
-#define I2S_LRC   2 /* Left/Right */
+#define I2S_BCLK  46 /* Bit Clock */
+#define I2S_LRC   47 /* Left/Right */
 
 #ifdef ENABLE_I2S_DAC
   #include "AudioOutputI2S.h"
   AudioOutputI2S* pOutput;
-  #define I2S_DOUT  15 /* Audio Data */
+  #define I2S_DOUT  45 /* Audio Data */
 
   // Normary Use Maxim MAX98357 I2S DAC it no need MCLK
   // #define USE_CS4344_DAC
@@ -96,7 +96,7 @@ AudioFileSourceSPIFFS* pFile;
 // #define RESET_OLED 16
 
 // For Wemos Lolin32 ESP32
-#define I2C_SCL 13
+#define I2C_SCL 3
 #define I2C_SDA 14
 
 #define OLED_BRIGHTNESS 196
