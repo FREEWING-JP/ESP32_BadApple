@@ -65,6 +65,27 @@ PCM5102A|Not Tested
 ```
 
 ---
+# Freenove ESP32-S3 Breadboard Wiring
+Freenove Ultimate Starter Kit for ESP32-S3 FNK0082  
+[Freenove ESP32-S3 Breadboard Wiring](https://www.amazon.co.jp/dp/B0BMQ2CPQN/ref=nosim?tag=freewing-22)  
+![image](https://user-images.githubusercontent.com/16265606/224533297-596374a9-5984-46fb-b21c-8d4be9ae1ad8.png)  
+
+```
+#define ENABLE_I2S_DAC
+#define I2S_BCLK  46 /* Bit Clock */
+#define I2S_LRC   47 /* Left/Right */
+
+  #define I2S_DOUT  45 /* Audio Data */
+
+  #define ADJUST_MP3_PRE_LOOP 700/1000
+
+#define I2C_SCL 3
+#define I2C_SDA 14
+
+#define OLED_BRIGHTNESS 196
+```
+
+---
 # ESP32_BadApple
 Bad Apple video by Touhou on ESP32 with SSD1306 OLED, uses the Heatshrink compression library to decompress the RLE encoded video data.
 First version, no sound yet, video only.
