@@ -39,6 +39,9 @@ ES7148|Good
 CS4344 with MCLK|Good
 MAX98357A|But Audio quality problem
 PCM5102A|Not Tested
+
+[<img src="https://img.youtube.com/vi/4GXgd6Nbv94/maxresdefault.jpg" alt="ESP32 I2S DAC Audio Comparison" title="ESP32 I2S DAC Audio Comparison" width="320" height="180"> YouTube https://youtu.be/4GXgd6Nbv94](https://youtu.be/4GXgd6Nbv94)  
+
 ```
 #define ENABLE_I2S_DAC
 #define I2S_BCLK  12 /* Bit Clock */
