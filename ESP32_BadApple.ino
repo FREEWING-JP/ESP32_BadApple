@@ -20,28 +20,29 @@
 #include "AudioFileSourceSPIFFS.h"
 #include "AudioGeneratorMP3.h"
 
-// #define ENABLE_I2S_DAC
-#define I2S_BCLK  26
-#define I2S_LRC   25
+#define ENABLE_I2S_DAC
+#define I2S_BCLK  12 /* Bit Clock */
+#define I2S_LRC   2 /* Left/Right */
 
 #ifdef ENABLE_I2S_DAC
   #include "AudioOutputI2S.h"
   AudioOutputI2S* pOutput;
-  #define I2S_DOUT  16
+  #define I2S_DOUT  15 /* Audio Data */
 
   // Normary Use Maxim MAX98357 I2S DAC it no need MCLK
   // #define USE_CS4344_DAC
   #ifdef USE_CS4344_DAC
     // Cirrus Logic CS4344 I2S DAC need MCLK
-    #define I2S_MCLK 14
+    #define I2S_MCLK 0 /* Master Clock */
   #endif
 
   // ! Caution Loud Sound !
-  #define AUDIO_OUTPUT_GAIN 0.3
+  #define AUDIO_OUTPUT_GAIN 0.300 /* for MAX98357A or PCM5102A, ES7148 etc. */
+  // #define AUDIO_OUTPUT_GAIN 1.999 /* for CS4344 */
 
   // Adjust this Loop value Yourself !!
   // Syncronize Audio and Video, Pre loop 1.000sec
-  #define ADJUST_MP3_PRE_LOOP 1000/1000
+  #define ADJUST_MP3_PRE_LOOP 700/1000
 
 #else
   #include "AudioOutputI2SNoDAC.h"
@@ -95,10 +96,10 @@ AudioFileSourceSPIFFS* pFile;
 // #define RESET_OLED 16
 
 // For Wemos Lolin32 ESP32
-#define I2C_SCL 4
-#define I2C_SDA 5
+#define I2C_SCL 13
+#define I2C_SDA 14
 
-#define OLED_BRIGHTNESS 16
+#define OLED_BRIGHTNESS 196
 
 // MAX freq for SCL is 4 MHz, However, Actual measured value is 892 kHz . (ESP32-D0WDQ6 (revision 1))
 // see Inter-Integrated Circuit (I2C)
