@@ -8,6 +8,8 @@ I have not committed the MP3 file due to copyright infringement .
 Place it in the data directory with the file name of "ba.mp3" by yourself .  
 "ba.mp3" MP3 Encoding Layer-3 Lame 22050HZ 40kbps Mono, duration 3:39.220, 1096379 bytes  
 
+[<img src="https://img.youtube.com/vi/GdZhwBkUALo/maxresdefault.jpg" alt="Touhou Bad Apple!! Demo ESP32 with MP3 Audio I2S DAC and SSD1306 OLED (128x64 dot)" title="Touhou Bad Apple!! Demo ESP32 with MP3 Audio I2S DAC and SSD1306 OLED (128x64 dot)" width="320" height="180"> YouTube https://youtu.be/GdZhwBkUALo](https://youtu.be/GdZhwBkUALo)  
+  
 [<img src="https://img.youtube.com/vi/B9TrOxXer4E/maxresdefault.jpg" alt="Touhou Bad Apple!! Demo ESP32 with MP3 Audio and SSD1306 OLED (128x64 dot)" title="Touhou Bad Apple!! Demo ESP32 with MP3 Audio and SSD1306 OLED (128x64 dot)" width="320" height="180"> YouTube https://youtu.be/B9TrOxXer4E](https://youtu.be/B9TrOxXer4E)  
 
 # ESP32 I2S Audio Schematics
@@ -22,6 +24,42 @@ CS4344
 
 See this commit [ba59205](https://github.com/FREEWING-JP/ESP32_BadApple_MP3/commit/ba5920535c691e5fde63bcc52ccd41607e39a3ea)  
 00_Write_SPIFFS.bat  
+
+---
+# Freenove ESP32 Breadboard Wiring
+Freenove Ultimate Starter Kit for ESP32 FNK0047  
+[Freenove ESP32-WROVER Breadboard Wiring](https://www.amazon.co.jp/dp/B09BC1N9LL/ref=nosim?tag=freewing-22)  
+![image](https://user-images.githubusercontent.com/16265606/224471689-c9747667-5584-4a42-9d73-1ba916416e18.png)  
+
+* I confirmed  
+
+DAC | Note
+-- | --
+ES7148|Good
+CS4344 with MCLK|Good
+MAX98357A|But Audio quality problem
+PCM5102A|Not Tested
+```
+#define ENABLE_I2S_DAC
+#define I2S_BCLK  12 /* Bit Clock */
+#define I2S_LRC   2 /* Left/Right */
+
+  #define I2S_DOUT  15 /* Audio Data */
+
+  // Normary Use Maxim MAX98357 I2S DAC it no need MCLK
+  // #define USE_CS4344_DAC
+  #ifdef USE_CS4344_DAC
+    // Cirrus Logic CS4344 I2S DAC need MCLK
+    #define I2S_MCLK 0 /* Master Clock */
+  #endif
+
+  #define ADJUST_MP3_PRE_LOOP 700/1000
+
+#define I2C_SCL 13
+#define I2C_SDA 14
+
+#define OLED_BRIGHTNESS 196
+```
 
 ---
 # ESP32_BadApple
